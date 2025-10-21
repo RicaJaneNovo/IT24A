@@ -15,8 +15,12 @@
      crossorigin=""></script>
 
 <style>
-        #map { height: 180px; }
          #map { height: 400px; }
+
+         .popup-image {
+            max-width: 200px;
+            height: auto;
+        }
 </style>
 
 </head>
@@ -32,6 +36,12 @@
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
+
+var marker = L.marker([10.88799921609593, 124.44760351832443]).addTo(map);
+const catImage = "<img src='https://www.google.com/imgres?q=cat%20memes&imgurl=https%3A%2F%2Fpreview.redd.it%2Frandom-question-but-does-anyone-have-versions-of-this-cat-v0-ya8qikz9kn0f1.png%3Fwidth%3D640%26crop%3Dsmart%26auto%3Dwebp%26s%3D2487b53aa5d4ac4e710f7717a6850c83562272ab&imgrefurl=https%3A%2F%2Fwww.reddit.com%2Fr%2Fcats%2Fcomments%2F1km3hf6%2Frandom_question_but_does_anyone_have_versions_of%2F&docid=zh6qB4zlDuPnHM&tbnid=sLthLeBR_uLOJM&vet=12ahUKEwj5x_Sh27KQAxX6lFYBHQ3eAUoQM3oECBAQAA..i&w=640&h=638&hcb=2&ved=2ahUKEwj5x_Sh27KQAxX6lFYBHQ3eAUoQM3oECBAQAA' class='popup-image'>";
+const popupContent = `${catImage}<br><b>Hello world!</b><br>I am a popup.`;
+
+marker.bindPopup(popupContent).openPopup();
 
 </script>
 </html>
