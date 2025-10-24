@@ -1,106 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus-map</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Map</title>
 
-     <!-- Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
-     <!-- Make sure you put this AFTER Leaflet's CSS -->
- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
+  <!-- Leaflet CSS -->
+  <link 
+    rel="stylesheet" 
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+    crossorigin=""
+  />
 
-<style>
-         #map { height: 400px; }
+  <!-- Leaflet JS -->
+  <script 
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+    crossorigin="">
+  </script>
 
-         .popup-image {
-            max-width: 200px;
-            height: auto;
-        }
-</style>
+  <style>
+    #map { 
+      height: 500px;
+      width: 100%;
+      border-radius: 8px;
+    }
 
+    .popup-image {
+      max-width: 200px;
+      border-radius: 6px;
+      height: auto;
+      display: block;
+      margin-bottom: 6px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Basic Map</h1>
+  <h1>Campus Map</h1>
+  <div id="map"></div>
 
-    <div id="map"></div>
-    
-</body>
-</script>
-   function initMap(mapDataUrl){
-    const map = L.map('map'). setView([8.3603,], 17)
-    
-    //OpenStreetMapLayer
-    const openStreetMap = L.tileLayer ('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      maxZoom:19,
-      attribution:'$copy; OpenStreetMap contributors'
-    });
-     
+  <script>
+    function initMap(mapDataUrl) {
+      // Initialize the map
+      const map = L.map('map').setView([8.3603, 124.8685], 17);
 
-    //Satellite
-    const satellite = L.tileLayer(
-       'https://server.argisonline.com/ArcGIS/rest/service/World_Imagery/MapServer/tile/{z}/{y}/{z}',
-       {attribution:'Tiles (c) Esri - Source: Esri, Maxar, Earthstar Geographics, GIS User Community'}
-    );
+      // Base layers
+      const openStreetMap = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      });
 
-    openStreetMap.addTo(map);
-    console.log("Base map tile layer loaded" + Date());
+      const satellite = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics' }
+      );
 
-    const makrkerGroups ={};
+      openStreetMap.addTo(map);
+      console.log("Base map loaded: " + new Date());
 
-    fetch(mapDataUrl)
-      .then(response => response.json())
-      .then(data =>{
-        data.forEach(pin => {
+      // Marker groups for filtering
+      const markerGroups = {};
+
+      // Fetch the map data (JSON file)
+      fetch(mapDataUrl)
+        .then(response => response.json())
+        .then(data => {
+          data.forEach(pin => {
             const type = pin.locationType || "Other";
 
-            if (!markerGroups[type]{
-               markerGroups[type] = L.layerGroups();
-            })
-            //Marker and Popup
-             const marker = L.marker([pin.lat,pin.lng]).addTo(map);
-                const img = `<img src='${pin.img}' class=popup-image>`;
-                const popupContent = `${img}<br><b> ${pin.title} </b><br> ${pin.description} `;
-                
-                 const img = `<img src='${pin.img}' class="popup-image">`;
-                marker.bindPopup(`${img}<br><b> ${pin.title} </b><br> ${pin.description}<br> ${pin.locationtype}`);
-                
-                console.log(`${pin.name} Loaded ` +Date());
+            // Create new group if it doesn’t exist
+            if (!markerGroups[type]) {
+              markerGroups[type] = L.layerGroup();
+            }
 
-                markerGroups.[type].addLayer(marker);
+            // Marker and popup
+            const marker = L.marker([pin.lat, pin.lng]);
+            const img = `<img src='${pin.img}' class='popup-image' alt='${pin.title}'>`;
+            const popupContent = `
+              ${img}
+              <b>${pin.title}</b><br>
+              ${pin.description}<br>
+              <small>${type}</small>
+            `;
 
-        });
-        //Add all groups to map initially
-        Object.values(markerGroups).forEach(group => group.addTo(map));
+            marker.bindPopup(popupContent);
+            markerGroups[type].addLayer(marker);
 
-        //Layer control
-        const baseMap={
+            console.log(`${pin.name} marker loaded.`);
+          });
+
+        
+          Object.values(markerGroups).forEach(group => group.addTo(map));
+
+        
+          const baseMaps = {
             "OpenStreetMap": openStreetMap,
             "Satellite": satellite
-        }
-        const overLayerMaps = {};
-        
+          };
 
-        //Add markerGroups to the map, according to layer filter
-        Object.keys(markerGroups).forEach(type=>{
+          
+          const overlayMaps = {};
+          Object.keys(markerGroups).forEach(type => {
             overlayMaps[type] = markerGroups[type];
-        });
-        
+          });
 
-        //Add all elements into the map
-        L.control.layers(baseMaps,overlayMaps,{collapsed:false}).addto(map);
-      })
-      .catch(err => console.error('Error loading JSON', err));
-}
+          
+          L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+        })
+        .catch(err => console.error('Error loading JSON:', err));
+    }
 
-
-document.addEventLister("DOMContentLoaded", ()=>{
-    initMap('campus-map.json');
-;});
-
-</script>
+    document.addEventListener("DOMContentLoaded", () => {
+      initMap('campus-map.json'); 
+    });
+  </script>
+</body>
 </html>
